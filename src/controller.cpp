@@ -108,7 +108,7 @@ namespace reef_control
     }
     */
 
-    command.mode = rosflight_msgs::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE;
+    command.mode = rosflight_msgs::msg::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE;
     command.F = std::min(std::max(thrust, 0.0), 1.0);
     //desired_state_.altitude_only = true;
     if(!desired_state_.attitude_valid && !desired_state_.altitude_only) {

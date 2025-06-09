@@ -3,9 +3,9 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <rosflight_msgs/Command.h>
-#include <rosflight_msgs/Status.h>
-#include <rosflight_msgs/RCRaw.h>
+#include <rosflight_msgs/msg/command.hpp>
+#include <rosflight_msgs/msg/status.hpp>
+#include <rosflight_msgs/msg/rc_raw.hpp>
 
 #include <math.h>
 #include <eigen3/Eigen/Core>
@@ -48,7 +48,7 @@ namespace reef_control
     rclcpp::Subscription<rosflight_msgs::msg::RCRaw>::SharedPtr rc_in_subcriber_;
 
     rclcpp::Time time_of_previous_control_;
-    rosflight_msgs::Command command;
+    rosflight_msgs::msg::Command command;
 
     double mass_;
     double gravity_;
