@@ -1,41 +1,45 @@
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include "controller.h"
 
 namespace reef_control
 {
   Controller::Controller() :
-    nh_(),
-    nh_private_("~"),
+    node_(std::make_shared<rclcpp::Node>("reef_controller")),
     armed_(false),
     initialized_(false),
     is_flying_(false)
   {
 
-    // Get Global Parameters
-    nh_.param<double>("gravity", gravity_, 9.80665);
+    // Get Parameters
+    node_->declare_parameter("gravity", 9.80665);
+    gravity_ = node_->get_parameter("gravity").as_double();
 
-    ROS_ASSERT_MSG(nh_private_.getParam("max_roll", max_roll_), "[rotor_controller] - missing parameters");
-    ROS_ASSERT(nh_private_.getParam("max_pitch", max_pitch_));
-    ROS_ASSERT(nh_private_.getParam("max_yaw_rate", max_yaw_rate_));
-    command_publisher_       = nh_.advertise<rosflight_msgs::Command>("command", 1);
+    node_->declare_parameter("max_roll", 0.0);
+    node_->declare_parameter("max_pitch", 0.0);
+    node_->declare_parameter("max_yaw_rate", 0.0);
+    max_roll_ = node_->get_parameter("max_roll").as_double();
+    max_pitch_ = node_->get_parameter("max_pitch").as_double();
+    max_yaw_rate_ = node_->get_parameter("max_yaw_rate").as_double();
 
-    desired_state_subcriber_ = nh_.subscribe("desired_state",1,&Controller::desiredStateCallback,this);
-    status_subscriber_       = nh_.subscribe("status",1,&Controller::statusCallback,this);
-    is_flying_subcriber_     = nh_.subscribe("is_flying",1, &Controller::isflyingCallback,this);
-    current_state_subcriber_ = nh_.subscribe("xyz_estimate", 1, &Controller::currentStateCallback,this);
-    rc_in_subcriber_         = nh_.subscribe("rc_raw",1,&Controller::RCInCallback,this);
-    pose_subcriber_          = nh_.subscribe("pose_stamped", 1, &Controller::poseCallback,this);
+    command_publisher_       = node_->create_publisher<rosflight_msgs::msg::Command>("command", 1);
 
-    time_of_previous_control_ = ros::Time(0);
+    desired_state_subcriber_ = node_->create_subscription<reef_msgs::msg::DesiredState>("desired_state",1,std::bind(&Controller::desiredStateCallback,this,std::placeholders::_1));
+    status_subscriber_       = node_->create_subscription<rosflight_msgs::msg::Status>("status",1,std::bind(&Controller::statusCallback,this,std::placeholders::_1));
+    is_flying_subcriber_     = node_->create_subscription<std_msgs::msg::Bool>("is_flying",1,std::bind(&Controller::isflyingCallback,this,std::placeholders::_1));
+    current_state_subcriber_ = node_->create_subscription<reef_msgs::msg::XYZEstimate>("xyz_estimate",1,std::bind(&Controller::currentStateCallback,this,std::placeholders::_1));
+    rc_in_subcriber_         = node_->create_subscription<rosflight_msgs::msg::RCRaw>("rc_raw",1,std::bind(&Controller::RCInCallback,this,std::placeholders::_1));
+    pose_subcriber_          = node_->create_subscription<geometry_msgs::msg::PoseStamped>("pose_stamped",1,std::bind(&Controller::poseCallback,this,std::placeholders::_1));
+
+    time_of_previous_control_ = node_->get_clock()->now();
 
   }
 
-  void Controller::desiredStateCallback(const reef_msgs::DesiredState& msg)
+  void Controller::desiredStateCallback(const reef_msgs::msg::DesiredState& msg)
   {
     desired_state_ = msg;
   }
 
-  void Controller::currentStateCallback(const reef_msgs::XYZEstimate& msg)
+  void Controller::currentStateCallback(const reef_msgs::msg::XYZEstimate& msg)
   {
     current_state_.header = msg.header;
     current_state_.twist.twist.linear.x = msg.xy_plus.x_dot;
@@ -45,7 +49,7 @@ namespace reef_control
     computeCommand();
   }
 
-  void Controller::poseCallback(const geometry_msgs::PoseStamped& msg)
+  void Controller::poseCallback(const geometry_msgs::msg::PoseStamped& msg)
   {
     current_state_.pose.pose.position.x = msg.pose.position.x;
     current_state_.pose.pose.position.y = msg.pose.position.y;
@@ -53,19 +57,19 @@ namespace reef_control
 
   }
 
-  void Controller::statusCallback(const rosflight_msgs::Status &msg)
+  void Controller::statusCallback(const rosflight_msgs::msg::Status &msg)
   {
     armed_ = msg.armed;
     initialized_ = armed_;
   }
 
-  void Controller::isflyingCallback(const std_msgs::Bool &msg)
+  void Controller::isflyingCallback(const std_msgs::msg::Bool &msg)
   {
     is_flying_ = msg.data;
     initialized_ = is_flying_ && armed_;
   }
 
-  void Controller::RCInCallback(const rosflight_msgs::RCRaw &msg)
+  void Controller::RCInCallback(const rosflight_msgs::msg::RCRaw &msg)
   {
 
   }
@@ -73,8 +77,8 @@ namespace reef_control
   void Controller::computeCommand()
   {
     // Time calculation
-    dt = (current_state_.header.stamp - time_of_previous_control_).toSec();
-    time_of_previous_control_ = current_state_.header.stamp;
+    dt = (rclcpp::Time(current_state_.header.stamp) - time_of_previous_control_).seconds();
+    time_of_previous_control_ = rclcpp::Time(current_state_.header.stamp);
     if(dt <= 0.0000001)
     {
       // Don't do anything if dt is really close (or equal to) zero

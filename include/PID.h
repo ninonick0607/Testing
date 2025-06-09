@@ -1,9 +1,7 @@
 #ifndef PID_CONTROLLER_H
 #define PID_CONTROLLER_H
 
-#include <ros/ros.h>
-#include <dynamic_reconfigure/server.h>
-#include <reef_control/GainsConfig.h>
+#include <rclcpp/rclcpp.hpp>
 #include <simple_pid.h>
 #include <math.h>
 #include <algorithm>
@@ -41,17 +39,13 @@ namespace reef_control
     bool face_target_;
     bool fly_fixed_wing_;
 
-    ros::Publisher desired_state_pub_;
+    rclcpp::Publisher<reef_msgs::msg::DesiredState>::SharedPtr desired_state_pub_;
 
-    dynamic_reconfigure::Server<reef_control::GainsConfig> server_;
-    dynamic_reconfigure::Server<reef_control::GainsConfig>::CallbackType func_;
 
-    void gainsCallback(reef_control::GainsConfig &config, uint32_t level);
+    void lookupTable(reef_msgs::msg::DesiredState& desired_state ,const nav_msgs::msg::Odometry& current_state);
 
-    void lookupTable(reef_msgs::DesiredState& desired_state ,const nav_msgs::Odometry& current_state);
-
-    void computeCommand(const nav_msgs::Odometry current_state,
-                        reef_msgs::DesiredState& desired_state,
+    void computeCommand(const nav_msgs::msg::Odometry current_state,
+                        reef_msgs::msg::DesiredState& desired_state,
                         double dt);
 
   };
