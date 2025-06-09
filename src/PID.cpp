@@ -1,4 +1,4 @@
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include "controller.h"
 #include "PID.h"
 
@@ -6,45 +6,16 @@ namespace reef_control
 {
   PIDController::PIDController() : Controller()
   {
-    func_ = boost::bind(&PIDController::gainsCallback,this,_1,_2);
-    server_.setCallback(func_);
-    desired_state_pub_ = nh_.advertise<reef_msgs::DesiredState>("controller_state", 1);
-    nh_.param<bool>("face_target",face_target_, false);
-    nh_.param<bool>("fly_fixed_wing",fly_fixed_wing_, false);
+    desired_state_pub_ = node_->create_publisher<reef_msgs::msg::DesiredState>("controller_state", 1);
+    node_->declare_parameter("face_target", false);
+    node_->declare_parameter("fly_fixed_wing", false);
+    face_target_ = node_->get_parameter("face_target").as_bool();
+    fly_fixed_wing_ = node_->get_parameter("fly_fixed_wing").as_bool();
   }
 
-  void PIDController::gainsCallback(reef_control::GainsConfig &config, uint32_t level)
-  {
-    double xIntegrator = config.xIntegrator?1.0:0.0;
-    double uIntegrator = config.uIntegrator?1.0:0.0;
 
-    ROS_INFO("New u(PID):   %0.4f,%0.4f,%0.4f", config.uP,uIntegrator*config.uI,config.uD);
-    ROS_INFO("New v(PID):   %0.4f,%0.4f,%0.4f", config.vP,uIntegrator*config.vI,config.vD);
-    ROS_INFO("New w(PID):   %0.4f,%0.4f,%0.4f", config.wP,uIntegrator*config.wI,config.wD);
-    ROS_INFO("New YAW(PID): %0.4f,%0.4f,%0.4f", config.yawP,config.yawI,config.yawD);
-
-    kp = config.kp;
-    deadzone = config.deadzone;
-    vel_max = config.max_vel;
-    x_0 = config.center_point;
-    alpha = config.alpha;
-    sigma = 0.1;
-
-    d_.setGains( config.dP,   xIntegrator*config.dI,   config.dD,   config.nedtau);
-    yaw_.setGains(   config.yawP, config.yawI,             config.yawD, config.yawtau);
-    u_.setGains(     config.uP,   uIntegrator*config.uI,   config.uD,   config.uvtau);
-    v_.setGains(     config.vP,   uIntegrator*config.vI,   config.vD,   config.uvtau);
-    w_.setGains(     config.wP,   uIntegrator*config.wI,   config.wD,   config.uvtau);
-
-    d_.setMinMax(-0.7, config.max_d);
-    yaw_.setMinMax(-2.0, 2.0);
-    u_.setMinMax(-config.max_u, config.max_u);
-    v_.setMinMax(-config.max_v, config.max_v);
-    w_.setMinMax(-config.max_w, config.max_w);
-  }
-
-  void PIDController::computeCommand(const nav_msgs::Odometry current_state_,
-                                     reef_msgs::DesiredState& desired_state,
+  void PIDController::computeCommand(const nav_msgs::msg::Odometry current_state_,
+                                     reef_msgs::msg::DesiredState& desired_state,
                                      double dt)  {
     if(!initialized_) {
       d_.clearIntegrator();
@@ -76,7 +47,7 @@ namespace reef_control
     desired_state_pub_.publish(desired_state);
   }
 
-  void PIDController::lookupTable(reef_msgs::DesiredState& desired_state ,const nav_msgs::Odometry& current_state_)
+  void PIDController::lookupTable(reef_msgs::msg::DesiredState& desired_state ,const nav_msgs::msg::Odometry& current_state_)
   {
     double velocity_request;
     double euclidian_distance;

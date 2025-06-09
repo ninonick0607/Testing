@@ -4,7 +4,7 @@ The REEF Control package contains a set of simple cascading PID controllers desi
 Another feature of this package is that it enables the user to tune the gains of the PID controller dynamically.  
 **All components are expressed in the NED frame since ROSFlight expects the attitude command in that frame**
 ## Prerequisites
-Requires [ROS Melodic](http://wiki.ros.org/melodic/Installation), [ROSFlight](https://docs.rosflight.org/user-guide/ros-setup/) and the [REEF_msgs](https://github.com/uf-reef-avl/reef_msgs) package to be installed. Additionally, the package depends on the [dynamic_reconfigure](http://wiki.ros.org/dynamic_reconfigure) package.
+Requires **ROS2** (for example [Foxy](https://docs.ros.org/en/foxy/Installation.html)), [ROSFlight](https://docs.rosflight.org/user-guide/ros-setup/) and the [REEF_msgs](https://github.com/uf-reef-avl/reef_msgs) package to be installed.
 For REEF Estimator feedback, [REEF Estimator](https://github.com/uf-reef-avl/reef_estimator) should be installed. For REEF Teleop control, [REEF Teleop](https://github.com/uf-reef-avl/reef_teleop) should be installed.
 
 ## Backgroud
@@ -92,9 +92,7 @@ The u(PID), v(PID), w(PID), d(PID) and yaw(PID) are the PID gains for the body f
 *face_target* parameter is used to decide if you want the vehicle heading to face the next waypoint, *fly_fixed_wing* is used make a multirotor platform "fly like a fixed wing vehicle" where instead of a hovering and yawing, there will be a slight forward velocity as it yaws.
 
 ## Dynamic Tuning
-Dynamic tuning has been used in our lab in order to tune the PID gains while the vehicle is in flight. When using this, please exercise caution as drastic changes to certain gains can lead to crashes. 
-
-The dynamic tuning uses the yaml parameters as the default values. Hence the gains are launched using a namespace which is the SAME as the name of the node (refer to launch file). If this is NOT the case all the gains will be set to the default value in the [configure](./cfg/Gains.cfg) file. Please refer to the [tutorial](http://wiki.ros.org/dynamic_reconfigure/Tutorials/HowToWriteYourFirstCfgFile) for the dynamic configure for more details.
+Dynamic tuning through `dynamic_reconfigure` is not yet available in this ROS2 port. Gains should be set through parameters before launching the node.
 
 ### Tuning the Gains:
 1) Enable a ground station to communicate with the ROS Master which is running on the vehicle's on-board computer. Refer to this [tutorial](http://wiki.ros.org/ROS/Tutorials/MultipleMachines) to implement this. To test this is working, run roscore on the vehicle and check if you can see the topics on the ground station. 

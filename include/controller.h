@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <rosflight_msgs/Command.h>
 #include <rosflight_msgs/Status.h>
@@ -10,11 +10,11 @@
 #include <math.h>
 #include <eigen3/Eigen/Core>
 
-#include <reef_msgs/XYZEstimate.h>
-#include <reef_msgs/DesiredState.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <std_msgs/Bool.h>
-#include <nav_msgs/Odometry.h>
+#include <reef_msgs/msg/xyz_estimate.hpp>
+#include <reef_msgs/msg/desired_state.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <std_msgs/msg/bool.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 
 #include <simple_pid.h>
 
@@ -28,27 +28,26 @@ namespace reef_control
     ~Controller(){}
 
     bool initialized_;
-    ros::NodeHandle nh_;
-    ros::NodeHandle nh_private_;
+    rclcpp::Node::SharedPtr node_;
 
    private:
     bool is_flying_;                       // Set by is_flying callback
     bool armed_;
     bool xy_control_flag;
 
-    nav_msgs::Odometry current_state_;
-    reef_msgs::DesiredState desired_state_;
+    nav_msgs::msg::Odometry current_state_;
+    reef_msgs::msg::DesiredState desired_state_;
 
-    ros::Publisher command_publisher_;
+    rclcpp::Publisher<rosflight_msgs::msg::Command>::SharedPtr command_publisher_;
 
-    ros::Subscriber status_subscriber_;
-    ros::Subscriber current_state_subcriber_;
-    ros::Subscriber desired_state_subcriber_;
-    ros::Subscriber is_flying_subcriber_;
-    ros::Subscriber pose_subcriber_;
-    ros::Subscriber rc_in_subcriber_;
+    rclcpp::Subscription<rosflight_msgs::msg::Status>::SharedPtr status_subscriber_;
+    rclcpp::Subscription<reef_msgs::msg::XYZEstimate>::SharedPtr current_state_subcriber_;
+    rclcpp::Subscription<reef_msgs::msg::DesiredState>::SharedPtr desired_state_subcriber_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr is_flying_subcriber_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_subcriber_;
+    rclcpp::Subscription<rosflight_msgs::msg::RCRaw>::SharedPtr rc_in_subcriber_;
 
-    ros::Time time_of_previous_control_;
+    rclcpp::Time time_of_previous_control_;
     rosflight_msgs::Command command;
 
     double mass_;
@@ -65,17 +64,17 @@ namespace reef_control
 
     Eigen::Vector3d accel_out;
 
-    void currentStateCallback(const reef_msgs::XYZEstimate& msg);
-    void desiredStateCallback(const reef_msgs::DesiredState& msg);
-    void poseCallback(const geometry_msgs::PoseStamped& msg);
-    void isflyingCallback(const std_msgs::Bool& msg);
-    void statusCallback(const rosflight_msgs::Status &msg);
-    void RCInCallback(const rosflight_msgs::RCRaw &msg);
+    void currentStateCallback(const reef_msgs::msg::XYZEstimate& msg);
+    void desiredStateCallback(const reef_msgs::msg::DesiredState& msg);
+    void poseCallback(const geometry_msgs::msg::PoseStamped& msg);
+    void isflyingCallback(const std_msgs::msg::Bool& msg);
+    void statusCallback(const rosflight_msgs::msg::Status &msg);
+    void RCInCallback(const rosflight_msgs::msg::RCRaw &msg);
     void computeCommand();  // Computes and sends command message
 
     // Virtual Function
-    virtual void computeCommand(const nav_msgs::Odometry current_state,
-                  reef_msgs::DesiredState& desired_state,
+    virtual void computeCommand(const nav_msgs::msg::Odometry current_state,
+                  reef_msgs::msg::DesiredState& desired_state,
                   double dt) = 0;
 
   };
