@@ -48,7 +48,7 @@ namespace reef_control
     rclcpp::Subscription<rosflight_msgs::msg::RCRaw>::SharedPtr rc_in_subcriber_;
 
     rclcpp::Time time_of_previous_control_;
-    rosflight_msgs::Command command;
+    rosflight_msgs::msg::Command command;
 
     double mass_;
     double gravity_;
