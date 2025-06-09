@@ -44,7 +44,7 @@ namespace reef_control
       desired_state.acceleration.x = u_.computePID(desired_state.velocity.x, current_state_.twist.twist.linear.x, dt);
       desired_state.acceleration.y = v_.computePID(desired_state.velocity.y, current_state_.twist.twist.linear.y, dt);
     }
-    desired_state_pub_.publish(desired_state);
+    desired_state_pub_->publish(desired_state);
   }
 
   void PIDController::lookupTable(reef_msgs::msg::DesiredState& desired_state ,const nav_msgs::msg::Odometry& current_state_)
